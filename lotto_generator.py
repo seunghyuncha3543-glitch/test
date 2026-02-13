@@ -133,6 +133,8 @@ def generate_lotto_patterns(
     birth = _parse_birth_date(birth_date)
     if not (0 <= birth_hour <= 23):
         raise ValueError("출생 시각은 0~23 사이여야 합니다.")
+    if not (1 <= numbers_per_pattern <= 23):
+        raise ValueError("패턴당 번호 개수는 1~23 사이여야 합니다.")
 
     seed = _weekday_seed() + int(birth.strftime("%Y%m%d")) + birth_hour
     rng = random.Random(seed)
