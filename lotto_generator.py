@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import random
+import re
 from collections import Counter
 from typing import Dict, List
 
@@ -36,7 +37,6 @@ BRANCHES = {
     11: "water",  # 해
 }
 
-# 1~45를 오행 기반 구간으로 나눔
 NUMBER_GROUPS = {
     "wood": list(range(1, 10)),
     "fire": list(range(10, 19)),
@@ -47,7 +47,6 @@ NUMBER_GROUPS = {
 
 
 def _weekday_seed(today: dt.date | None = None) -> int:
-    """이번 주 금요일 날짜를 기준으로 시드 생성."""
     today = today or dt.date.today()
     days_until_friday = (4 - today.weekday()) % 7
     friday = today + dt.timedelta(days=days_until_friday)
@@ -55,19 +54,14 @@ def _weekday_seed(today: dt.date | None = None) -> int:
 
 
 def _saju_element_score(birth: dt.date, hour: int) -> Counter:
-    """연/월/일/시 기둥의 단순화된 오행 점수 계산."""
     scores: Counter = Counter()
 
     year_stem = STEMS[(birth.year - 4) % 10]
     year_branch = BRANCHES[(birth.year - 4) % 12]
-
-    # 월/일/시는 단순화한 계산법 사용
     month_stem = STEMS[(birth.year * 12 + birth.month) % 10]
     month_branch = BRANCHES[(birth.month + 1) % 12]
-
     day_stem = STEMS[(birth.toordinal() + 6) % 10]
     day_branch = BRANCHES[(birth.toordinal() + 8) % 12]
-
     hour_branch = BRANCHES[((hour % 24) // 2) % 12]
     hour_stem = STEMS[(birth.toordinal() * 12 + hour) % 10]
 
@@ -87,7 +81,6 @@ def _saju_element_score(birth: dt.date, hour: int) -> Counter:
 
 
 def _weighted_pool(scores: Counter) -> List[int]:
-    """오행 점수에 비례해 번호 풀 가중치 구성."""
     if not scores:
         scores = Counter({el: 1 for el in ELEMENTS})
 
@@ -101,6 +94,34 @@ def _weighted_pool(scores: Counter) -> List[int]:
         pool.extend(NUMBER_GROUPS[el] * (weight * 3))
 
     return pool
+
+
+def _parse_birth_date(value: str) -> dt.date:
+    """지원 형식: YYYY-MM-DD / YYYY.MM.DD / YYYY/MM/DD / YYYY / 1990년."""
+    raw = value.strip()
+
+    year_only = re.fullmatch(r"(\d{4})\D*", raw)
+    if year_only:
+        return dt.date(int(year_only.group(1)), 1, 1)
+
+    normalized = raw.replace(".", "-").replace("/", "-")
+    try:
+        return dt.datetime.strptime(normalized, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("출생일은 YYYY-MM-DD(또는 YYYY) 형식으로 입력해주세요.") from exc
+
+
+def _parse_birth_hour(value: str) -> int:
+    """지원 형식: 0~23, 13시 등 숫자 포함 입력."""
+    raw = value.strip()
+    match = re.search(r"\d{1,2}", raw)
+    if not match:
+        raise ValueError("출생 시각에서 숫자를 찾을 수 없습니다.")
+
+    hour = int(match.group())
+    if not (0 <= hour <= 23):
+        raise ValueError("출생 시각은 0~23 사이여야 합니다.")
+    return hour
 
 
 def generate_lotto_patterns(
@@ -137,35 +158,14 @@ def generate_lotto_patterns(
     return result
 
 
-def _parse_birth_date(value: str) -> dt.date:
-    """출생일 문자열을 date로 파싱한다.
-
-    지원 형식:
-    - YYYY-MM-DD
-    - YYYY (이 경우 1월 1일로 간주)
-    """
-    raw = value.strip()
-    if len(raw) == 4 and raw.isdigit():
-        return dt.date(int(raw), 1, 1)
-
-    try:
-        return dt.datetime.strptime(raw, "%Y-%m-%d").date()
-    except ValueError as exc:
-        raise ValueError("출생일은 YYYY-MM-DD 또는 YYYY 형식이어야 합니다.") from exc
-
-
 def _interactive_input() -> tuple[str, int]:
-    """CLI 인자가 없을 때 사용할 입력 모드."""
     while True:
         try:
-            birth_date = input("출생일(또는 출생년도)을 입력하세요 (YYYY-MM-DD 또는 YYYY): ").strip()
-            birth_hour_raw = input("출생 시각을 입력하세요 (0~23): ").strip()
-            birth_hour = int(birth_hour_raw)
+            birth_date = input("출생일(YYYY-MM-DD) 또는 출생년도(YYYY): ").strip()
+            birth_hour_input = input("출생 시각(0~23, 예: 13 또는 13시): ").strip()
 
-            # 유효성 사전 점검
             _parse_birth_date(birth_date)
-            if not (0 <= birth_hour <= 23):
-                raise ValueError("출생 시각은 0~23 사이여야 합니다.")
+            birth_hour = _parse_birth_hour(birth_hour_input)
             return birth_date, birth_hour
         except ValueError as exc:
             print(f"입력 오류: {exc}")
@@ -176,23 +176,27 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="사주 오행 가중치를 반영한 주간 로또 번호 5패턴 생성기"
     )
-    parser.add_argument("--birth-date", help="출생일 (YYYY-MM-DD)")
-    parser.add_argument("--birth-hour", type=int, help="출생 시각 (0~23)")
+    parser.add_argument("--birth-date", help="출생일 (YYYY-MM-DD 또는 YYYY)")
+    parser.add_argument("--birth-hour", help="출생 시각 (0~23, 또는 13시)")
     return parser.parse_args()
 
 
 def main() -> None:
-    args = parse_args()
+    try:
+        args = parse_args()
 
-    if args.birth_date is None or args.birth_hour is None:
-        birth_date, birth_hour = _interactive_input()
-    else:
-        birth_date, birth_hour = args.birth_date, args.birth_hour
+        if args.birth_date is None or args.birth_hour is None:
+            birth_date, birth_hour = _interactive_input()
+        else:
+            birth_date = args.birth_date
+            birth_hour = _parse_birth_hour(args.birth_hour)
 
-    patterns = generate_lotto_patterns(birth_date, birth_hour)
-    print("이번 주 금요일 기준 추천 번호 5패턴")
-    for i, nums in enumerate(patterns, start=1):
-        print(f"패턴 {i}: {nums}")
+        patterns = generate_lotto_patterns(birth_date, birth_hour)
+        print("이번 주 금요일 기준 추천 번호 5패턴")
+        for i, nums in enumerate(patterns, start=1):
+            print(f"패턴 {i}: {nums}")
+    except (ValueError, EOFError) as exc:
+        print(f"오류: {exc}")
 
 
 if __name__ == "__main__":
