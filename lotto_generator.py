@@ -109,7 +109,7 @@ def generate_lotto_patterns(
     patterns: int = 5,
     numbers_per_pattern: int = 6,
 ) -> List[List[int]]:
-    birth = dt.datetime.strptime(birth_date, "%Y-%m-%d").date()
+    birth = _parse_birth_date(birth_date)
     if not (0 <= birth_hour <= 23):
         raise ValueError("출생 시각은 0~23 사이여야 합니다.")
 
@@ -137,11 +137,39 @@ def generate_lotto_patterns(
     return result
 
 
+def _parse_birth_date(value: str) -> dt.date:
+    """출생일 문자열을 date로 파싱한다.
+
+    지원 형식:
+    - YYYY-MM-DD
+    - YYYY (이 경우 1월 1일로 간주)
+    """
+    raw = value.strip()
+    if len(raw) == 4 and raw.isdigit():
+        return dt.date(int(raw), 1, 1)
+
+    try:
+        return dt.datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("출생일은 YYYY-MM-DD 또는 YYYY 형식이어야 합니다.") from exc
+
+
 def _interactive_input() -> tuple[str, int]:
     """CLI 인자가 없을 때 사용할 입력 모드."""
-    birth_date = input("출생일을 입력하세요 (YYYY-MM-DD): ").strip()
-    birth_hour = int(input("출생 시각을 입력하세요 (0~23): ").strip())
-    return birth_date, birth_hour
+    while True:
+        try:
+            birth_date = input("출생일(또는 출생년도)을 입력하세요 (YYYY-MM-DD 또는 YYYY): ").strip()
+            birth_hour_raw = input("출생 시각을 입력하세요 (0~23): ").strip()
+            birth_hour = int(birth_hour_raw)
+
+            # 유효성 사전 점검
+            _parse_birth_date(birth_date)
+            if not (0 <= birth_hour <= 23):
+                raise ValueError("출생 시각은 0~23 사이여야 합니다.")
+            return birth_date, birth_hour
+        except ValueError as exc:
+            print(f"입력 오류: {exc}")
+            print("다시 입력해주세요.\n")
 
 
 def parse_args() -> argparse.Namespace:
