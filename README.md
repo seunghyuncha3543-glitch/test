@@ -1,174 +1,59 @@
-# JCR Racer V4
+# KOREA IT 정적 홈페이지 가이드
 
-UE5 playable prototype scaffold for a luxury 3D country-road racing demo inspired by a 2026 rear-engine sports car. No Porsche logo, crest, model badge, or trademarked branding is used.
+이 프로젝트는 **HTML + CSS + JavaScript만으로 만든 정적 홈페이지**입니다.
+웹호스팅(카페24, 가비아, AWS S3 정적 호스팅 등)에 그대로 업로드해 사용할 수 있습니다.
 
-## What Is Implemented
+## 1) 파일 구조
 
-- Chaos Vehicles pawn base: `AJCRVehiclePawn`
-- Enhanced Input runtime mapping:
-  - `W` / Right Trigger: throttle
-  - `S` / Left Trigger: brake
-  - `A`: steer left
-  - `D`: steer right
-  - Left stick X: analog steering
-  - `1`: toggle ABS state
-  - `2`: toggle TCS state
-- SpringArm chase camera with lag, rotation lag, and speed FOV from 70 to 92
-- High-speed steering reduction
-- 8-speed automatic setup target, 1650 kg mass, 610 Nm torque target
-- Runtime HUD widget for speed, RPM, gear, timer, checkpoint, ABS/TCS
-- Runtime 1 km test route:
-  - village start
-  - rice-field straight
-  - gentle curve
-  - mountain approach
-  - torii pass
-  - finish gate
-- Runtime checkpoint time attack manager
-- Placeholder headlight, brake light, dust, and exhaust component hooks
-- Lumen GI/reflection renderer settings
-- No-asset prototype fallback: if no skeletal vehicle mesh is assigned, the pawn shows a simple placeholder body and uses lightweight driving movement so the route can still be tested.
-- Visual-quality pass inspired by high-end open-world racing references:
-  - low, blue prototype sports-car silhouette with cabin, rear wing, splitter, rotating wheels, lights
-  - asphalt road with yellow center paint, white edge lines, gravel shoulders, guardrails
-  - denser roadside shrubs, rocks, utility poles, houses, torii gate, distant mountain ridge
-  - directional sun, skylight, height fog, bloom, subtle motion blur, saturation tuning
+- `index.html` : 한국어 메인 홈페이지
+- `ja/index.html` : 일본어 메인 홈페이지
+- `notice/index.html` : 공고 목록 페이지
+- `notice/sample-notice.html` : 공고 상세 예시
+- `css/style.css` : 전체 스타일
+- `js/main.js` : 모바일 메뉴 기능
+- `assets/logo.svg` : 로고 파일(교체 가능)
+- `assets/symbol.svg` : 심볼 파일(교체 가능)
+- `assets/images/` : 일반 이미지 보관
+- `assets/notices/` : 공고 첨부 파일 보관(PDF 등)
 
-## First-Time Setup In Unreal Editor
+## 2) 초보자 수정 포인트
 
-### Easiest Path
+### A. 회사 정보 수정
+- `index.html` / `ja/index.html` / `notice/index.html`의 footer에서 아래 항목을 수정하세요.
+  - 회사명
+  - 대표번호
+  - 이메일
+  - 주소
 
-Double-click `SetupAndRun.bat`.
+### B. 메인 문구 수정
+- `index.html`의 `<section class="hero">` 내부 문구를 수정하면 한국어 첫 화면 문구가 바뀝니다.
+- `ja/index.html`의 같은 영역을 수정하면 일본어 첫 화면 문구가 바뀝니다.
 
-On this machine Unreal Engine was found at `E:\Epic Games\UE_5.7`, so `Run_E_Drive_Unreal.bat` is the most direct launcher.
+### C. 서비스 항목 수정
+- `index.html`의 `id="service"` 섹션에서 `<article class="card">` 블록을 수정/복사하면 서비스 항목을 추가할 수 있습니다.
 
-It will:
+### D. 공고 추가(정적 게시판 방식)
+1. `notice/sample-notice.html` 파일을 복사합니다.
+2. 파일명을 예: `notice-2026-01.html` 처럼 변경합니다.
+3. 제목/날짜/본문을 수정합니다.
+4. `notice/index.html`의 공고 목록 영역에 새 파일 링크를 추가합니다.
+5. "현재 등록된 공고가 없습니다." 문구는 공고가 있을 때 삭제하세요.
 
-1. Find Unreal Engine 5.
-2. Check for Visual Studio C++ tools.
-3. Generate Visual Studio project files.
-4. Compile `JCRRacerV4Editor`.
-5. Launch Unreal Editor.
-6. Run `Scripts/CreatePrototypeContent.py` to create `/Game/Maps/M_JapanCountryRoad_Test`.
+## 3) 로고/심볼 교체 방법
 
-Then open `/Game/Maps/M_JapanCountryRoad_Test` and press Play.
+- `assets/logo.svg` 파일을 새 로고 파일로 교체합니다.
+- `assets/symbol.svg` 파일을 새 심볼 파일로 교체합니다.
+- 파일명 유지 시 HTML 수정 없이 반영됩니다.
 
-After code changes, close any running Unreal Editor instance and run `Run_E_Drive_Unreal.bat` again so the freshly compiled DLL is loaded.
+## 4) 배포 방법
 
-### Other Shortcuts
+1. 전체 파일을 압축(zip)합니다.
+2. 호스팅 파일관리자 또는 FTP로 업로드합니다.
+3. 루트 경로에 `index.html`이 있는지 확인합니다.
+4. `your-domain.com/ja/`, `your-domain.com/notice/` 접속 확인
 
-- `CompileOnly.bat`: generate project files and compile, but do not open Unreal Editor.
-- `OpenEditor.bat`: open Unreal Editor without compiling first.
-- `Run_E_Drive_Unreal.bat`: compile and run using `E:\Epic Games\UE_5.7`.
-- `InstallVisualStudioBuildTools.bat`: opens the official Visual Studio Build Tools download page if C++ tools are missing.
+## 5) 기술 메모
 
-### Manual Path
-
-1. Open `JCRRacerV4.uproject` with Unreal Engine 5.7 or newer.
-2. Let Unreal generate project files and compile the C++ module.
-3. Run `Scripts/CreatePrototypeContent.py` from `Tools > Execute Python Script` to create `/Game/Maps/M_JapanCountryRoad_Test`.
-4. In World Settings, set GameMode Override to `JCRGameMode` if it is not picked up automatically.
-5. Press Play.
-
-The game mode spawns the course builder and race manager at runtime. The default pawn is `AJCRVehiclePawn`. Without a skeletal car mesh, it still moves as a visible prototype block car; after a proper Chaos vehicle mesh and wheel blueprints are assigned, Chaos Vehicles becomes the intended production path.
-
-## Required Vehicle Asset Step
-
-Chaos Vehicles need a rigged skeletal vehicle mesh with wheel bones and wheel blueprints. The C++ class configures the target behavior and includes a no-asset driving fallback, but an actual production-ready vehicle mesh is still needed for full tire simulation.
-
-Recommended Blueprint setup:
-
-1. Create `BP_VirtualGTS_Car` in `Content/Blueprints/Vehicle`.
-2. Parent class: `JCRVehiclePawn`.
-3. Assign a skeletal car mesh with four wheel bones.
-4. Create Chaos wheel blueprints:
-   - `BP_Wheel_Front`
-   - `BP_Wheel_Rear`
-5. In the inherited Chaos movement component, assign wheel setups:
-   - Front left/right use `BP_Wheel_Front`
-   - Rear left/right use `BP_Wheel_Rear`
-6. Set the project GameMode default pawn to `BP_VirtualGTS_Car`.
-
-## Blueprint Roles
-
-### `BP_VirtualGTS_Car`
-
-Parent: `JCRVehiclePawn`
-
-Main variables:
-
-- `VehicleMassKg`: 1650
-- `MaxTorqueNm`: 610
-- `FrontBrakeBias`: 0.62
-- `bAbsEnabled`: true
-- `bTcsEnabled`: true
-- `BaseFov`: 70
-- `MaxFov`: 92
-- `HighSpeedSteeringScale`: 0.38
-
-Event graph:
-
-- `BeginPlay`: optional material initialization, Niagara asset assignment
-- `Tick`: optional wheel smoke intensity from speed and steering angle
-- Input is already handled in C++
-
-### `BP_RaceManager`
-
-Parent: `JCRRaceManager`
-
-Role:
-
-- Tracks race timer
-- Requires checkpoints in numeric order
-- Stops timer at finish checkpoint
-
-Event graph:
-
-- Use `HandleCheckpointPassed` extension points for split sounds, UI animation, and finish celebration.
-
-### `BP_Checkpoint`
-
-Parent: `JCRRaceCheckpoint`
-
-Variables:
-
-- `CheckpointIndex`
-- `bFinish`
-
-Role:
-
-- Box overlap trigger for time attack progression.
-
-### `BP_JapanCountryRoadBuilder`
-
-Parent: `JCRWorldBuilder`
-
-Role:
-
-- Generates the 1 km test course with placeholder geometry.
-- Replace placeholder cubes with Nanite road, house, pole, wire, torii, field, and mountain meshes as art becomes available.
-
-### `WBP_RaceHUD`
-
-Parent: `JCRRaceHUDWidget`
-
-Role:
-
-- The C++ widget already displays telemetry.
-- For a richer UMG layout, create a Widget Blueprint using the same telemetry functions:
-  - `GetSpeedKmh`
-  - `GetDisplayRpm`
-  - `GetDisplayGear`
-  - `IsAbsEnabled`
-  - `IsTcsEnabled`
-  - Race manager `GetRaceTime`
-  - Race manager `GetNextCheckpointIndex`
-  - Race manager `GetCheckpointCount`
-
-## Notes
-
-- The runtime input mapping deliberately separates `A` and `D` so `A` always produces negative steering and `D` always produces positive steering.
-- The visible route geometry is intentionally placeholder-friendly. It gives you a playable spatial prototype before replacing meshes with final art.
-- No trademarked Porsche branding is present.
-- Korean setup notes are in `Docs/BlueprintSetup_KO.md`.
-- Korean compile/run instructions are in `?�행방법_?�국??md`.
+- 외부 프레임워크(React, Next.js) 없이 제작
+- 반응형 지원(모바일 메뉴 포함)
+- SEO 기본 메타 태그 및 OG 태그 포함
